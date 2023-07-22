@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const config = require('./configs/config.json');
 const commands = [];
 
-const commandFiles = fs.readdirSync(`./commands/interactions/`).filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync(`../project-orion/commands/interactions/`).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
     const command = require(`./commands/interactions/${file}`);
