@@ -11,7 +11,7 @@ for (const file of commandFiles) {
     commands.push(command.data.toJSON());
 }
 
-// TESTING UPDATE CAPABILITIES
+// TESTING UPDATE CAPABILITIES 1
 
 const rest = new Discord.REST({ version: '10' }).setToken(config.Token);
 
