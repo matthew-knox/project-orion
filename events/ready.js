@@ -6,13 +6,13 @@ module.exports = async (client) => {
     await client.user.setPresence({
         activities: [
             {
-                name: `Brains`,
-                type: Discord.ActivityType.Watching
+                name: `Test`,
+                type: Discord.ActivityType.Listening
             }
         ],
         status: 'online'
     });
 
-    console.log(chalk.bold.greenBright(`${client.user.tag} is online and ready to answer your questions!`));
+    console.log(chalk.bold.greenBright(`${client.user.tag} is online!`));
 
 };

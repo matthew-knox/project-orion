@@ -1,17 +1,24 @@
 const Discord = require('discord.js');
 const openAI = require('openai');
 const chalk = require('chalk');
+const fs = require('node:fs');
 const func = require('../../utils/functions');
+const settings = require('../../utils/settings');
 const config = require('../../configs/config.json');
 
 module.exports = {
     data: new Discord.SlashCommandBuilder()
-        .setName("imagine")
-        .setDescription("Draw your imaginations!")
+        .setName("translate")
+        .setDescription("Translate your texts from any language to any language!")
         .addStringOption(option => option
             .setName("prompt")
-            .setDescription("What is your imagine?")
+            .setDescription("What is your text?")
             .setRequired(true)
+        )
+        .addStringOption(option => option
+            .setName("language")
+            .setDescription("What language would you like me to translate your prompt into? (Default: English)")
+            .setRequired(false)
         )
         .addStringOption(option => option
             .setName('ephemeral')
@@ -39,65 +46,116 @@ module.exports = {
 
         const question = interaction.options.getString("prompt");
 
-        openai.createImage({
+        openai.createModeration({
 
-            prompt: question,
-            n: 4,
-            size: '1024x1024'
+            input: question
 
         }).then(async (response) => {
 
-            const data = response.data.data;
+            const data = response.data.results[0];
+            if (data.flagged) {
 
-            const embeds = [
-
-                new Discord.EmbedBuilder()
-                    .setColor(config.MainColor)
-                    .setURL('https://github.com/iTzArshia/GPT-Discord-Bot')
+                const embed = new Discord.EmbedBuilder()
+                    .setColor(config.ErrorColor)
                     .setAuthor({
                         name: question.length > 256 ? question.substring(0, 253) + "..." : question,
                         iconURL: interaction.user.displayAvatarURL()
                     })
-                    .setImage(data[0].url)
-                    .setFooter({
-                        text: `Costs ${func.pricing('dall.e', 4, '1024x1024')}`,
-                        iconURL: client.user.displayAvatarURL()
-                    })
+                    .setDescription(`Your request was rejected as a result of our safety system. Your prompt may contain text that is not allowd by our safety system\n\n**Flags:** ${func.flagCheck(data.categories).trueFlags}`);
 
-            ];
+                await interaction.editReply({ embeds: [embed] });
 
-            const buttons = [
+            } else {
 
-                new Discord.ButtonBuilder()
-                    .setStyle(Discord.ButtonStyle.Link)
-                    .setLabel('Image 1')
-                    .setURL(data[0].url)
+                const language = interaction.options.getString("language") || 'English';
+                const translatorPrompt = fs.readFileSync("./utils/prompts/translator.txt", "utf-8");
+                const prompt = translatorPrompt.replaceAll('{language}', language);
 
-            ];
+                const messages = [
+                    {
+                        "role": "system",
+                        "content": prompt
+                    },
+                    {
+                        "role": 'user',
+                        "content": question
+                    }
+                ];
 
-            for (let i = 0; i < 3; i++) {
+                openai.createChatCompletion({
 
-                const embed = new Discord.EmbedBuilder()
-                    .setURL('https://github.com/iTzArshia/GPT-Discord-Bot')
-                    .setImage(data[i + 1].url);
+                    model: 'gpt-3.5-turbo',
+                    messages: messages,
+                    max_tokens: func.tokenizer('chatgpt', messages).maxTokens,
+                    temperature: settings.translator.temprature,
+                    top_p: settings.translator.top_p,
+                    frequency_penalty: settings.translator.frequency_penalty,
+                    presence_penalty: settings.translator.presence_penalty
 
-                const button = new Discord.ButtonBuilder()
-                    .setStyle(Discord.ButtonStyle.Link)
-                    .setLabel(`Image ${i + 2}`)
-                    .setURL(data[i + 1].url)
+                }).then(async (response) => {
 
-                embeds.push(embed);
-                buttons.push(button);
+                    const answer = response.data.choices[0].message.content;
+                    const usage = response.data.usage;
+
+                    if (answer.length <= 4096) {
+
+                        const embed = new Discord.EmbedBuilder()
+                            .setColor(config.MainColor)
+                            .setAuthor({
+                                name: question.length > 256 ? question.substring(0, 253) + "..." : question,
+                                iconURL: interaction.user.displayAvatarURL()
+                            })
+                            .setDescription(answer)
+                            .setFooter({
+                                text: `Costs ${func.pricing('chatgpt', usage.total_tokens)}`,
+                                iconURL: client.user.displayAvatarURL()
+                            });
+
+                        await interaction.editReply({ embeds: [embed] });
+
+                    } else {
+
+                        const attachment = new Discord.AttachmentBuilder(
+                            Buffer.from(`${question}\n\n${answer}`, 'utf-8'),
+                            { name: 'response.txt' }
+                        );
+                        await interaction.editReply({ files: [attachment] });
+
+                    };
+
+                }).catch(async (error) => {
+
+                    console.error(chalk.bold.redBright(error));
+
+                    if (error.response) {
+
+                        const embed = new Discord.EmbedBuilder()
+                            .setColor(config.ErrorColor)
+                            .setAuthor({
+                                name: question.length > 256 ? question.substring(0, 253) + "..." : question,
+                                iconURL: interaction.user.displayAvatarURL()
+                            })
+                            .setDescription(error.response.data.error.message);
+
+                        await interaction.editReply({ embeds: [embed] }).catch(() => null);
+
+                    } else if (error.message) {
+
+                        const embed = new Discord.EmbedBuilder()
+                            .setColor(config.ErrorColor)
+                            .setAuthor({
+                                name: question.length > 256 ? question.substring(0, 253) + "..." : question,
+                                iconURL: interaction.user.displayAvatarURL()
+                            })
+                            .setDescription(error.message);
+
+                        await interaction.editReply({ embeds: [embed] }).catch(() => null);
+
+                    };
+
+                });
 
             };
-
-            const row = new Discord.ActionRowBuilder()
-                .addComponents(buttons);
-
-            await interaction.editReply({
-                embeds: embeds,
-                components: [row]
-            });
 
         }).catch(async (error) => {
 

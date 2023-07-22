@@ -130,9 +130,9 @@ module.exports = {
 
                                     await message.reply({ files: [attachment] });
 
-                                }
+                                };
 
-                            }
+                            };
 
                         }).catch(async (error) => {
 
@@ -170,7 +170,7 @@ module.exports = {
 
                                 await message.reply({ embeds: [embed] }).catch(() => null);
 
-                            }
+                            };
 
                         });
 
@@ -202,11 +202,11 @@ module.exports = {
 
                             await message.reply({ embeds: [embed] }).catch(() => null);
 
-                        }
+                        };
 
                     });
 
-                }
+                };
 
             }).catch(async (error) => {
 
@@ -236,11 +236,11 @@ module.exports = {
 
                     await message.reply({ embeds: [embed] }).catch(() => null);
 
-                }
+                };
 
             });
 
-        }
+        };
 
     },
 

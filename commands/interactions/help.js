@@ -34,7 +34,7 @@ module.exports = {
                 iconURL: client.user.displayAvatarURL({ size: 1024 })
             })
             .setDescription(client.MessageCommands.map(c => `> \`${config.Prefix}${c.name}\` \`(${c.aliases?.map(a => `${config.Prefix}${a}`)?.join(' / ') || 'No Aliases'})\`\n> *${c.description}*`).join('\n\n'))
-            .setFooter({ text: 'Iteratively self-building bot' });
+            .setFooter({ text: 'Developed by matthew-knox https://github.com/matthew-knox/project-orion' });
 
         if (chatbot.State) embed.addFields({
             name: 'ChatBot:',
