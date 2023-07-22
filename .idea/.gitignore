@@ -5,3 +5,7 @@
 /httpRequests/
 
 node_modules
+.idea
+modules.xml
+*.iml
+vcs.xml
