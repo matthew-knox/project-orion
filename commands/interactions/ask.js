@@ -20,11 +20,11 @@ module.exports = {
             .setDescription("What model do you want to ask from? (Default: ChatGPT)")
             .setChoices(
                 {
-                    name: 'ChatGPT (BEST OF THE BEST)',
+                    name: 'ChatGPT',
                     value: 'chatgpt'
                 },
                 {
-                    name: 'Davinci (Most powerful)',
+                    name: 'Davinci',
                     value: 'davinci'
                 },
                 {
@@ -36,7 +36,7 @@ module.exports = {
                     value: 'babbage'
                 },
                 {
-                    name: 'Ada (Fastest)',
+                    name: 'Ada',
                     value: 'ada'
                 },
             )
